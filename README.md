@@ -21,9 +21,10 @@ This project simplifies data handling with centralized path management.
 
 ## **Session Info**
 
-- **Python Version**: 3.12.4 | packaged by Anaconda, Inc. | (main, Jun 18 2024, 15:12:24) [GCC 11.2.0]
-- **Platform**: Linux-6.8.0-47-generic-x86_64-with-glibc2.39
+- **Python Version**: 3.8.19 | packaged by conda-forge | (default, Mar 20 2024, 12:47:35) 
+[GCC 12.3.0]
+- **Platform**: Linux-6.8.0-47-generic-x86_64-with-glibc2.10
 - **OS**: Linux
 - **Architecture**: 64bit
 - **Processor**: x86_64
-- **Generated On**: 2024-12-17 09:58:09
+- **Generated On**: 2024-12-19 10:05:22

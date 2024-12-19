@@ -3,7 +3,7 @@ import os
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 DATA_PATHS = {
-    "remote_data": "/path/to/cluster/data1",
+    "emdat_path":"/net/projects/xaida/raw_data/emdat_data/public_emdat_1990_2023.xlsx"
 }
 
 def get_path(name):
