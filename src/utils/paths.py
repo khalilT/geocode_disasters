@@ -8,9 +8,14 @@ DATA_PATHS = {
     #GAUL geolocation maps
     "gaul1_path" : "/net/projects/xaida/raw_data/gaul_maps/gaul_admin1_clean.gpkg",
     "gaul2_path" : "/net/projects/xaida/raw_data/gaul_maps/gaul_admin2_clean.gpkg",
-    #Geonames identified locations
-    "df_locations_path" : "../data/intermediate_data/event_locations_to_geolocate.csv",
-    "df_locations_corrected_path" : "data/intermediate_data/corrected_locations/corrected_locations.csv",
+    #Locations to identify with GeoNames
+    "df_locations_path" : "/net/projects/xaida/database_paper/intermediate_data/event_locations_to_geolocate.csv",
+    #manually corrected locations
+    "df_locations_corrected_path" : "/net/projects/xaida/database_paper/intermediate_data/corrected_locations.csv",
+    #folder containing identified locations
+    "identified_locations_path" : "/net/projects/xaida/database_paper/intermediate_data/identified_locations/",
+    #folder containing manually corrected location names
+    "corrected_locations_path" : "/net/projects/xaida/database_paper/intermediate_data/corrected_locations/",
     #Geonames locations cleaned
     "geonames_locations_clean_path" : "../data/intermediate_data/name_locations_identified_clean.csv",
     #Path to save intermediate data

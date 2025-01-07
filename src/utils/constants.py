@@ -104,3 +104,22 @@ rep_us_states = {
 replace_terms = ["Near", "Between","Provinces", "Province","Prov.","Districts","District","Dis.","Div.","Regions" ,"Region", "states","state",
                  "(cities)","(City)","cities","City", "Regency", "districts", "county","Departments", "Department","municipalities", "Municipality",
                  "=","Level 2","-","N.A. on the source", "islands", "island", "of the"," isl.(archip.)"," isl.", "area", " in"]
+
+
+#Constants to be used to correct location & region names in script 2
+replace_phl = {'Region XIII': '',
+'Region XII': '',
+'Region XI': '',
+'Region X': '',
+'Region IX': '',
+'Region VIII': '',
+'Region VII': '',
+'Region VI': '',
+'Region V': '',
+'Region IV-A': '',
+'Region IV': '',
+'Region III': '',
+'Region II': '',
+'Region I': '',
+'\(':'',
+'\)':''}
