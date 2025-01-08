@@ -213,7 +213,7 @@ no_match_names = no_match_names.reset_index()
 
 #find locations matching by provinces (ADM1)
 
-no_match_province_df = no_match_names.apply(functions.find_match_province_adm1, axis=1)
+no_match_province_df = no_match_names.apply(lambda row: functions.find_match_province_adm1(row, gaul1), axis=1)
 dfprovince_list = []
 
 for dfi in no_match_province_df:
@@ -222,9 +222,27 @@ for dfi in no_match_province_df:
 
 name_located_province = pd.concat(dfprovince_list)
 no_match_names_matching_adm1 = no_match_names.set_index("index").loc[name_located_province["index"]]
-no_match_names_matching_adm1 = no_match_names_matching_adm1.drop([416, 6869, 7666, 7199, 6873, 6935, 8038, 7667,7668,7669,417])
 
-#remove identified adm1 locations
+#determine indices of locations that are wrong and should be dropped
+indices_to_drop = no_match_names_matching_adm1[
+    (no_match_names_matching_adm1["DisNo."] == "2023-0828-AUS") & ((no_match_names_matching_adm1["Location"] == "daintree")) | 
+    (no_match_names_matching_adm1["DisNo."] == "1995-0445-AUS") & ((no_match_names_matching_adm1["Location"] == "tarree")) |
+    (no_match_names_matching_adm1["DisNo."] == "1991-0218-USA") & ((no_match_names_matching_adm1["Location"] == "richmond")) |
+    (no_match_names_matching_adm1["DisNo."] == "1994-0599-USA") & ((no_match_names_matching_adm1["Location"] == "eureka")) |
+    (no_match_names_matching_adm1["DisNo."] == "1995-0026-USA") & ((no_match_names_matching_adm1["Location"] == "middle west")) |
+    (no_match_names_matching_adm1["DisNo."] == "1993-0430-USA") & ((no_match_names_matching_adm1["Location"] == "harris")) |
+    (no_match_names_matching_adm1["DisNo."] == "1999-0435-USA") & ((no_match_names_matching_adm1["Location"] == "bahamas")) |
+    (no_match_names_matching_adm1["DisNo."] == "1999-0619-USA") & ((no_match_names_matching_adm1["Location"] == "bahamas")) |
+    (no_match_names_matching_adm1["DisNo."] == "2022-0734-USA") & ((no_match_names_matching_adm1["Location"] == "bahamas")) |
+    (no_match_names_matching_adm1["DisNo."] == "1990-0357-USA") & ((no_match_names_matching_adm1["Location"] == "caroline du nord")) |
+    (no_match_names_matching_adm1["DisNo."] == "1995-0150-USA") & ((no_match_names_matching_adm1["Location"] == "missouri, dc")) |
+    (no_match_names_matching_adm1["DisNo."] == "1995-0150-USA") & ((no_match_names_matching_adm1["Location"] == "missouri, dc"))
+].index
+
+#drop these locations
+no_match_names_matching_adm1 = no_match_names_matching_adm1.drop(indices_to_drop)
+
+#remove so far identified adm1 locations (keep only adm2 locations)
 no_match_names_NOTmatching_adm1 = no_match_names.set_index("index").drop(no_match_names_matching_adm1.index).reset_index()
 
 #find locations where the name is mentiond in the Admin name but can't be matched
@@ -243,10 +261,98 @@ no_match_names_matching_adm1_b = no_match_names_NOTmatching_adm1.set_index("inde
 no_match_names_NOTmatching_adm1 = no_match_names_NOTmatching_adm1.set_index("index").drop(no_match_names_matching_adm1_b["index"]).reset_index()
 
 #find name matches for regions level 1
-admin1_name_matched_gaul = functions.find_retun_adm1_matches(no_match_names_NOTmatching_adm1)
-admin2_name_matched_gaul = functions.find_retun_adm2_matches(no_match_names_NOTmatching_adm1)
-
+admin1_name_matched_gaul = functions.find_retun_adm1_matches(no_match_names_NOTmatching_adm1, gaul1)
+admin2_name_matched_gaul = functions.find_retun_adm2_matches(no_match_names_NOTmatching_adm1, gaul2)
 admin1_name_matched_gaul = admin1_name_matched_gaul[admin1_name_matched_gaul["index"] != set(admin2_name_matched_gaul["index"]).intersection(admin1_name_matched_gaul["index"])]
 
 no_match_names_NOTmatching_adm1 = no_match_names_NOTmatching_adm1.set_index("index").drop(admin1_name_matched_gaul["index"]).reset_index()
-no_match_names_NOTmatching_adm1 = no_match_names_NOTmatching_adm1.set_index("index").drop(admin2_name_matched_gaul["index"]).reset_index()
+
+no_match_names_NOTmatching_adm1["similarity_loc_pro"] = no_match_names_NOTmatching_adm1.apply(functions.calculate_similarity_location_province, axis=1)
+
+indices_to_drop2 = no_match_names_NOTmatching_adm1[
+    (no_match_names_NOTmatching_adm1["DisNo."] == "2023-0760-BOL") & ((no_match_names_NOTmatching_adm1["Location"] == "suárez")) | 
+    (no_match_names_NOTmatching_adm1["DisNo."] == "2023-0760-BOL") & ((no_match_names_NOTmatching_adm1["Location"] == "carmen rivero torrez"))
+].index
+
+no_match_names_NOTmatching_adm1 = no_match_names_NOTmatching_adm1.drop(indices_to_drop2)
+
+admin_1_last_subset = no_match_names_NOTmatching_adm1[no_match_names_NOTmatching_adm1["similarity_loc_pro"] >= 60]
+
+no_match_names_NOTmatching_adm1 = no_match_names_NOTmatching_adm1.drop(admin_1_last_subset.index)
+
+#4 collect locations together
+#and assign quality flags
+##########################
+
+## All cases of matches with admin 1 level regions
+#adm1 locations
+locations_adm1_a = name_detected_adm1[["ADM1_NAME", "ADM1_CODE","ADM2_NAME", "ADM2_CODE","DisNo.","Location","geoNames","Province","ISO"]]
+locations_adm1_a.loc[:,"ADM2_NAME"] = np.NaN
+locations_adm1_a.loc[:,"ADM2_CODE"] = np.NaN
+locations_adm1_a.loc[:,"admin_level"] = 1
+locations_adm1_a.loc[:,"geocoding_q"] = 2
+
+#adm1 locations
+locations_adm1_b = no_match_names_matching_adm1_b[["ADM1_NAME", "ADM1_CODE", "ADM2_NAME", "ADM2_CODE","DisNo.","Location","geoNames","Province","ISO"]]
+locations_adm1_b.loc[:,"ADM2_NAME"] = np.NaN
+locations_adm1_b.loc[:,"ADM2_CODE"] = np.NaN
+locations_adm1_b.loc[:,"admin_level"] = 1
+locations_adm1_b.loc[:,"geocoding_q"] = 2
+
+#adm1 locations
+locations_adm1_c = no_match_names_matching_adm1[["ADM1_NAME", "ADM1_CODE", "ADM2_NAME", "ADM2_CODE","DisNo.","Location","geoNames","Province","ISO"]]
+locations_adm1_c.loc[:,"ADM2_NAME"] = np.NaN
+locations_adm1_c.loc[:,"ADM2_CODE"] = np.NaN
+locations_adm1_c.loc[:,"admin_level"] = 1
+locations_adm1_c.loc[:,"geocoding_q"] = 3
+
+#admin 1 with matched names
+locations_adm1_d = admin1_name_matched_gaul[["ADM1_NAME", "ADM1_CODE", "DisNo.","Location","geoNames","Province","ISO"]]
+locations_adm1_d.loc[:,"ADM2_NAME"] = np.NaN
+locations_adm1_d.loc[:,"ADM2_CODE"] = np.NaN
+locations_adm1_d.loc[:,"admin_level"] = 1
+locations_adm1_d.loc[:,"geocoding_q"] = 2
+
+#admin 1 with matched names
+locations_adm1_e = admin_1_last_subset[["ADM1_NAME", "ADM1_CODE", "DisNo.","Location","geoNames","Province","ISO"]]
+locations_adm1_e.loc[:,"ADM2_NAME"] = np.NaN
+locations_adm1_e.loc[:,"ADM2_CODE"] = np.NaN
+locations_adm1_e.loc[:,"admin_level"] = 1
+locations_adm1_e.loc[:,"geocoding_q"] = 2
+
+## All cases of matches with admin 2 level regions
+#adm2 locations
+locations_adm2_a = name_detected_adm2[["ADM1_NAME", "ADM1_CODE","ADM2_NAME", "ADM2_CODE","DisNo.","Location","geoNames","Province","ISO"]]
+locations_adm2_a.loc[:,"admin_level"] = 2
+locations_adm2_a.loc[:,"geocoding_q"] = 2
+
+#admin 2 with matched names
+locations_adm2_b = admin2_name_matched_gaul[["ADM1_NAME", "ADM1_CODE", "ADM2_NAME", "ADM2_CODE","DisNo.","Location","geoNames","Province","ISO"]]
+locations_adm2_b.loc[:,"admin_level"] = 2
+locations_adm2_b.loc[:,"geocoding_q"] = 2
+
+#admin2 locations
+locations_adm2_c = no_match_names_NOTmatching_adm1[["ADM1_NAME", "ADM1_CODE", "ADM2_NAME", "ADM2_CODE","DisNo.","Location","geoNames","Province","ISO"]]
+locations_adm2_c.loc[:,"admin_level"] = 2
+locations_adm2_c.loc[:,"geocoding_q"] = 4
+
+#admin2 locations
+locations_adm2_d = admin2_geonames[["ADM1_NAME", "ADM1_CODE", "ADM2_NAME", "ADM2_CODE","DisNo.","Location","geoNames","Province","ISO"]]
+locations_adm2_d.loc[:,"admin_level"] = 2
+locations_adm2_d.loc[:,"geocoding_q"] = 3
+
+#admin2 locations
+locations_adm2_e = no_match_names_no_adm1[["ADM1_NAME", "ADM1_CODE", "ADM2_NAME", "ADM2_CODE","DisNo.","Location","geoNames","Province","ISO"]]
+locations_adm2_e.loc[:,"admin_level"] = 2
+locations_adm2_e.loc[:,"geocoding_q"] = 4
+
+#concat all regions and save results
+name_locations = pd.concat([locations_adm1_a, locations_adm1_b, locations_adm1_c, locations_adm1_d,locations_adm1_e,
+                    locations_adm2_a, locations_adm2_b, locations_adm2_c, locations_adm2_d, locations_adm2_e]).reset_index().drop(columns={"index"})
+
+output_dir = get_path("intermediate_data_path")
+name_locations.to_csv(output_dir+"name_locations_identified_clean.csv")
+
+print("Done!")
+print("Done!")
+print("Done!")

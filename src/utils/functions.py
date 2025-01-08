@@ -205,7 +205,7 @@ def calculate_similarity_geonames(row):
 
 
 #function to find matching regions at admin level 1
-def find_matching_region_adm1(row, threshold=80):
+def find_matching_region_adm1(row,gaul1, threshold=80):
     # Extract ISO code and location from the row
     iso_code = row["ISO"]
     regionoi = row["Location"]
@@ -245,7 +245,7 @@ def find_matching_region_adm1(row, threshold=80):
 
 
 #function to find matching regions at admin level 2
-def find_matching_region_adm2(row, threshold=80):
+def find_matching_region_adm2(row,gaul2, threshold=80):
     # Extract ISO code and location from the row
     iso_code = row["ISO"]
     regionoi = row["Location"]
@@ -289,7 +289,7 @@ def find_matching_region_adm2(row, threshold=80):
     return pd.DataFrame(columns=["ADM1_NAME","ADM1_CODE","ADM2_NAME","ADM2_CODE", "Score", "DisNo.","Location", "index","geoNames","Province","ISO"])
 
 #function to find matching regions at admin level 1 with province identified with Geonames
-def find_match_province_adm1(row, threshold=80):
+def find_match_province_adm1(row, gaul1,threshold=80):
     # Extract ISO code and location from the row
     iso_code = row["ISO"]
     regionoi = row["Province"]
@@ -322,12 +322,11 @@ def find_match_province_adm1(row, threshold=80):
             "ISO":[row["ISO"]]
         })
         return result_df
-    
     # If no match is found above the threshold, return an empty DataFrame
     return pd.DataFrame(columns=["ADM1_NAME","ADM1_CODE", "Score", "DisNo.","Province", "index","geoNames","ISO"])
 
-def find_retun_adm1_matches(df):
-    no_match_adm1_df = df.apply(find_matching_region_adm1, axis=1)
+def find_retun_adm1_matches(df,gaul1):
+    no_match_adm1_df = df.apply(lambda row: find_matching_region_adm1(row, gaul1), axis=1)
     df1_list = []
     for dfi in no_match_adm1_df:
         if not dfi.empty:
@@ -335,8 +334,8 @@ def find_retun_adm1_matches(df):
     name_located_adm1 = pd.concat(df1_list)
     return(name_located_adm1)
 
-def find_retun_adm2_matches(df):
-    no_match_adm2_df = df.apply(find_matching_region_adm2, axis=1)
+def find_retun_adm2_matches(df,gaul2):
+    no_match_adm2_df = df.apply(lambda row: find_matching_region_adm2(row, gaul2), axis=1)
     df2_list = []
     for dfi in no_match_adm2_df:
         if not dfi.empty:
@@ -385,3 +384,8 @@ def find_regionname_adm2(row):
         return result_df
     return pd.DataFrame(columns=["ADM1_NAME", "ADM1_CODE","ADM2_NAME", "ADM2_CODE", "Score", "DisNo.","Province", "index"])
 
+# Function to calculate the similarity score between two strings
+def calculate_similarity_location_province(row):
+    location = str(row['Location']) if pd.notna(row['Location']) else ''
+    province = str(row['Province']) if pd.notna(row['Province']) else ''
+    return fuzz.ratio(location.lower(), province.lower())
