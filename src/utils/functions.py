@@ -389,3 +389,76 @@ def calculate_similarity_location_province(row):
     location = str(row['Location']) if pd.notna(row['Location']) else ''
     province = str(row['Province']) if pd.notna(row['Province']) else ''
     return fuzz.ratio(location.lower(), province.lower())
+
+#Functions used in script 4
+
+# Process 'Admin Units' column to get Admin1 Code, Admin2 Code, and Geo Locations
+def process_admin_units(units):
+    if pd.isna(units):
+        return pd.Series([None, None, None])
+    
+    admin1_units = []
+    admin2_units = []
+
+    # Extract Admin1 and Admin2 information
+    for unit in eval(units):
+        if 'adm1_code' in unit:
+            admin1_units.append((unit['adm1_code'], unit['adm1_name']))
+        if 'adm2_code' in unit:
+            admin2_units.append((unit['adm2_code'], unit['adm2_name']))
+    
+    # Sort admin units alphabetically
+    admin1_units.sort(key=lambda x: x[1])  # Sort by adm1_name
+    admin2_units.sort(key=lambda x: x[1])  # Sort by adm2_name
+
+    admin1_codes = [str(unit[0]) for unit in admin1_units]
+    admin1_names_list = [unit[1] for unit in admin1_units]
+    
+    admin2_codes = [str(unit[0]) for unit in admin2_units]
+    admin2_names_list = [unit[1] for unit in admin2_units]
+    
+    # Construct Geo Locations string
+    geo_location_str = ', '.join(admin1_names_list) + (' (Adm1).' if admin1_names_list else '')
+    if admin2_names_list:
+        geo_location_str += ' ' + ', '.join(admin2_names_list) + ' (Adm2).'
+    
+    return pd.Series([';'.join(admin1_codes), ';'.join(admin2_codes), geo_location_str])
+
+
+# fix invalid geometries
+def fix_invalid_geometry(geometry):
+    """
+    Fix invalid geometries by buffering with a value of 0.
+    Parameters:
+        geometry (shapely.geometry): A geometry object to check and fix.
+    Returns:
+        shapely.geometry: Fixed geometry if invalid, otherwise the original geometry.
+    """
+    if not geometry.is_valid:
+        return geometry.buffer(0)  # Fix invalid geometry
+    return geometry
+
+
+
+def check_bounding_box_containment(gdf):
+    # Get the bounding boxes for each geometry
+    bounding_boxes = gdf.bounds
+
+    for i in range(len(gdf)):
+        for j in range(len(gdf)):
+            if i != j:  # Avoid comparing a geometry with itself
+                # Get bounding boxes for geometry i and geometry j
+                bbox_i = bounding_boxes.iloc[i]
+                bbox_j = bounding_boxes.iloc[j]
+                
+                # Check if bbox_i is contained within bbox_j
+                contained = (bbox_i['minx'] >= bbox_j['minx'] and
+                             bbox_i['miny'] >= bbox_j['miny'] and
+                             bbox_i['maxx'] <= bbox_j['maxx'] and
+                             bbox_i['maxy'] <= bbox_j['maxy'])
+                
+                if contained:
+                    return np.unique(gdf["DisNo."].values[0])  # Return True as soon as containment is detected
+
+    return None  # Return False if no containment is found
+

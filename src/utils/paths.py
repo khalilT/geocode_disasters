@@ -17,9 +17,15 @@ DATA_PATHS = {
     #folder containing manually corrected location names
     "corrected_locations_path" : "/net/projects/xaida/database_paper/intermediate_data/corrected_locations/",
     #Geonames locations cleaned
-    "geonames_locations_clean_path" : "../data/intermediate_data/name_locations_identified_clean.csv",
+    "geonames_locations_clean_path" : "/net/projects/xaida/database_paper/intermediate_data/name_locations_identified_clean.csv",
+    #geocoded locations no overlay
+    "geocoded_locations_path":"/net/projects/xaida/database_paper/intermediate_data/geolocated_climate_events_1990-2023_simplified_clean.gpkg",
+    #geocodded locations national overlay
+    "geocoded_national_path":"/net/projects/xaida/database_paper/intermediate_data/geolocated_climate_events_1990-2023_national_clean.gpkg",
     #Path to save intermediate data
     "intermediate_data_path":"/net/projects/xaida/database_paper/intermediate_data/",
+    #Path to save clean data
+    "clean_data_path":"/net/projects/xaida/database_paper/output_data/"
 }
 
 def get_path(name):
