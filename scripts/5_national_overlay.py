@@ -18,29 +18,50 @@ from utils.paths import get_path  # Import the get_path function from paths.py
 import utils.constants as constants
 import utils.functions as functions
 
-#1 Load Geolocated Climate Events Data
+print("1 Load geolocated climate events data")
+# 1 Load Geolocated Climate Events Data
 ###############################
 
-climate_event_locations_90_23 = gpd.read_file(get_path("geocoded_locations_path"), driver="GPKG")
+climate_event_locations_90_23 = gpd.read_file(
+    get_path("geocoded_locations_path"), driver="GPKG"
+)
 
-climate_event_locations_90_23 = climate_event_locations_90_23.set_index('DisNo.')
+climate_event_locations_90_23 = climate_event_locations_90_23.set_index("DisNo.")
+# Duplicate quality flags for each location
+# This is done to ensure that the quality flags are preserved for each location
+# and for the national overlay process
+climate_event_locations_90_23["regional_flags"] = climate_event_locations_90_23[
+    "geocoding_q"
+]
 
-#2 Aggregate Locations by event and save data
+print("2 Aggregate locations by event")
+# 2 Aggregate Locations by event and save data
 ###############################
 
-climate_event_locations_90_23_national_overlay = climate_event_locations_90_23.dissolve(by=['DisNo.'],aggfunc={
-    'ADM1_NAME':lambda x : ' - '.join(np.unique((x).astype(str))),
-    'ADM1_CODE':lambda x : ' - '.join(np.unique((x).astype(str))),
-    'ADM2_NAME':lambda x : ' - '.join(np.unique((x).astype(str))),
-    'ADM2_CODE':lambda x : ' - '.join(np.unique((x).astype(str))),
-    'Location':lambda x : ' - '.join(np.unique((x).astype(str))),
-    'geoNames':lambda x : ' - '.join(np.unique((x).astype(str))),
-    'ISO':lambda x: np.unique(x)[0],
-    'admin_level':lambda x : ' - '.join(np.unique((x).astype(str))),
-    'geocoding_q':lambda x : ' - '.join(np.unique((x).astype(str))),
-    })
+climate_event_locations_90_23_national_overlay = climate_event_locations_90_23.dissolve(
+    by=["DisNo."],
+    aggfunc={
+        "ADM1_NAME": lambda x: " - ".join(np.unique((x).astype(str))),
+        "ADM1_CODE": lambda x: " - ".join(np.unique((x).astype(str))),
+        "ADM2_NAME": lambda x: " - ".join(np.unique((x).astype(str))),
+        "ADM2_CODE": lambda x: " - ".join(np.unique((x).astype(str))),
+        "Location": lambda x: " - ".join(np.unique((x).astype(str))),
+        "geoNames": lambda x: " - ".join(np.unique((x).astype(str))),
+        "ISO": lambda x: np.unique(x)[0],
+        "admin_level": lambda x: " - ".join(np.unique((x).astype(str))),
+        "geocoding_q": lambda x: np.max((x).astype(str)),
+        "regional_flags": lambda x: " - ".join(np.unique(x.astype(str))),
+    },
+)
 
-#write identified locations
-climate_event_locations_90_23_national_overlay.to_file(get_path("intermediate_data_path")+"geolocated_climate_events_1990-2023_national_clean.gpkg", driver="GPKG")
+print("3 write data")
+# 3 Write data
+###############################
+# write identified locations
+climate_event_locations_90_23_national_overlay.to_file(
+    get_path("intermediate_data_path")
+    + "geolocated_climate_events_1990-2023_national_clean.gpkg",
+    driver="GPKG",
+)
 
 print("National overlay of geolocated climate events saved to file")

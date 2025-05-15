@@ -1,0 +1,7 @@
+{
+    "installOptions": {
+        "installFromRepository": true,
+        "libraryPath": "/net/home/kteber/R/x86_64-pc-linux-gnu-library/4.4",
+        "installDependencies": true
+    }
+}

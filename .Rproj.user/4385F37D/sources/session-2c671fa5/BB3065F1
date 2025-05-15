@@ -1,0 +1,26 @@
+{
+    "id": "BB3065F1",
+    "path": "~/geocode_disasters/src/utils/paths.py",
+    "project_path": "src/utils/paths.py",
+    "type": "python",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1741352252651.0,
+    "source_on_save": false,
+    "relative_order": 4,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "25,119",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1745408735,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1745408735,
+    "read_only": false,
+    "read_only_alternatives": []
+}

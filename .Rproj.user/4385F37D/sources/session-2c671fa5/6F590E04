@@ -1,0 +1,28 @@
+{
+    "id": "6F590E04",
+    "path": "~/geocode_disasters/scripts/db_descriptions.R",
+    "project_path": "scripts/db_descriptions.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1746442355583.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "0,0",
+        "scrollLine": "0",
+        "docOutlineVisible": "1",
+        "docOutlineSize": "232"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1746710084,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1746710084335,
+    "read_only": false,
+    "read_only_alternatives": []
+}

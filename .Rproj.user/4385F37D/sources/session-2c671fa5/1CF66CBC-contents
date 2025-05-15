@@ -1,0 +1,393 @@
+library(tidyverse) # general utility functions
+library(sf) # plot map
+library(rnaturalearth) # plot map
+library(rnaturalearthdata) # plot map
+library(patchwork)
+library(here)
+
+base_dir <- paste0(dirname(rstudioapi::getSourceEditorContext()$path), "/")
+source(paste0(base_dir, "../src/utils/paths.R"))
+
+
+disasters_national_st <- st_read(geocoded_national_path)
+disasters_subnat_st <- st_read(geocoded_location_path)
+emdat_df <- readxl::read_excel(emdat_path)
+
+disasters_df <- disasters_national_st %>%
+  as.data.frame() %>%
+  select(-geom)
+disasters_df
+
+disasters_df <- left_join(disasters_df, emdat_df, by = "DisNo.")
+
+continent_plot <- disasters_df %>%
+  ggplot(aes(x = `Start Year`, fill = Region)) +
+  geom_bar() +
+  scale_fill_viridis_d("Continent") +
+  ylab("Event count") +
+  xlab("Year") +
+  theme(text = element_text(size = 16))
+
+head(disasters_subnat_st)
+
+
+type_plot <- disasters_df %>%
+  ggplot(aes(x = `Start Year`, fill = `Disaster Type`)) +
+  geom_bar() +
+  scale_fill_viridis_d("Disaster Type", option = "A") +
+  ylab("Event count") +
+  xlab("Year") +
+  theme(
+    text = element_text(size = 16),
+    legend.text = element_text(size = 12)
+  )
+
+event_distribution <- (continent_plot / type_plot)
+ggsave(
+  "figures/fig_2_event_distribution.png",
+  event_distribution,
+  width = 16, height = 10, dpi = 300, units = "in"
+)
+
+
+length(unique(disasters_df$Country))
+
+
+round((table(disasters_df$geocoding_q) / 9217) * 100, 2)
+
+
+quality_flags <- disasters_df %>%
+  ggplot(aes(geocoding_q)) +
+  geom_bar(stat = "count") +
+  ylab("") +
+  xlab("Quality flags") +
+  stat_count(
+    geom = "label", colour = "tomato", size = 7,
+    aes(label = sprintf("%.02f %%", round(..count.. / 9217 * 100, 2))), position = position_stack(vjust = 1)
+  ) +
+  theme_minimal() +
+  theme(text = element_text(size = 20))
+
+ggsave(
+  "figures/fig_3_qualityflags.png",
+  quality_flags,
+  width = 14, height = 8, dpi = 300, units = "in"
+)
+
+
+disasters_df %>%
+  ggplot(aes(area_km2)) +
+  geom_histogram(bins = 500) +
+  geom_vline(xintercept = 30000, color = "red") +
+  annotate("text", x = 30000, y = 2000, angle = 90, vjust = 1, label = "More text", size = 9, color = "red") +
+  geom_vline(xintercept = 500000, color = "red") +
+  annotate("text", x = 500000, y = 2000, angle = 90, vjust = 1, label = "More text", size = 9, color = "red") +
+  geom_vline(xintercept = 1000000, color = "red") +
+  annotate("text", x = 1000000, y = 2000, angle = 90, vjust = 1, label = "More text", size = 9, color = "red")
+
+
+disasters_joind <- left_join(disasters_national_st, disasters_df, by = "DisNo.")
+
+
+unique(disasters_joind$admin_level)
+
+disasters_joind %>% filter(`Disaster Type` == "Flood" & admin_level == "1 - 2")
+
+
+# plot map ----------------------------------------------------------------
+
+data_plot <- disasters_df %>% filter(disaster_type == distype)
+data_plot <- st_as_sf(data_plot, coords = c("lon", "lat"), crs = 4326)
+coords <- st_coordinates(data_plot)
+# Add the extracted coordinates as new columns to the original dataframe
+data_plot$lon <- coords[, 1] # Longitude
+data_plot$lat <- coords[, 2] # Latitude
+
+
+number_events <- data_plot %>% nrow()
+
+map_disaster_plot <-
+  data_plot %>%
+  filter(disaster_type == distype) %>%
+  mutate(
+    sHDI_category = str_replace(sHDI_category, "Low sHDI", "Low"),
+    sHDI_category = str_replace(sHDI_category, "Medium sHDI", "Medium"),
+    sHDI_category = str_replace(sHDI_category, "High sHDI", "High"),
+    sHDI_category = str_replace(sHDI_category, "Very high sHDI", "V. high"),
+    sHDI_category = factor(sHDI_category, levels = c("Low", "Medium", "High", "V. high"))
+  ) %>%
+  ggplot() +
+  ggplot2::geom_sf(data = shp_countries, lwd = 0.2, color = "grey90", fill = "grey97") +
+  ggplot2::geom_sf(data = coastlines, lwd = 0.1, color = "grey10") +
+  geom_point(aes(color = sHDI_category, group = sHDI_category, geometry = geometry),
+    alpha = (log2(number_events) / sqrt(number_events)), position = "jitter", stat = "sf_coordinates", show.legend = F
+  ) +
+  scale_color_manual(values = c("Low" = low_hdi_col, "Medium" = medium_hdi_col, "High" = high_hdi_col, "V. high" = vhigh_hdi_col), drop = FALSE) +
+  coord_sf(crs = st_crs("ESRI:54030")) +
+  cowplot::theme_minimal_grid() +
+  ggtitle(paste(distype, "-", number_events, " events")) +
+  xlab("") +
+  ylab("") +
+  theme(
+    plot.margin = unit(c(0, 0, 0, 0), "mm"),
+    plot.title = element_text(size = 18, hjust = 0.5, vjust = -0.5, face = "plain"),
+    text = element_text(size = 20),
+    legend.direction = "horizontal",
+    legend.key.size = unit(0.5, "cm"),
+    legend.text = element_text(size = 20),
+    legend.title = element_text(size = 20, face = "bold")
+  )
+
+disasters_national_st
+
+
+data_plot <- disasters_national_st
+data_plot <- st_as_sf(data_plot, coords = c("lon", "lat"), crs = 4326)
+coords <- st_coordinates(data_plot)
+# Add the extracted coordinates as new columns to the original dataframe
+data_plot_df <- data_plot %>%
+  as.data.frame() %>%
+  select(-geom)
+data_plot_df$lon <- coords[, 1] # Longitude
+data_plot_df$lat <- coords[, 2] # Latitude
+
+disasters_national_st %>%
+  st_centroid()
+
+pts <- do.call(rbind, st_geometry(disasters_national_st))
+
+
+map(disasters_national_st[, 12], .f = st_is_valid)
+
+valid_geom <- st_make_valid(disasters_national_st)
+class(valid_geom)
+
+validity <- st_is_valid(valid_geom)
+sum(validity)
+
+valid_disasters <- valid_geom[validity, ]
+
+
+disaster_centroids <- st_centroid(valid_disasters)
+coordinates <- disaster_centroids %>% st_coordinates()
+disaster_centroids$lon <- coordinates[, 1]
+disaster_centroids$lat <- coordinates[, 2]
+
+disaster_centroids <- left_join(disaster_centroids, emdat_df, by = "DisNo.")
+
+# load geographic details for maps
+coastlines <- ne_coastline(scale = "medium", returnclass = "sf")
+shp_countries <- ne_countries(scale = "medium", returnclass = "sf")
+
+disaster_distribution <- disaster_centroids %>%
+  ggplot() +
+  ggplot2::geom_sf(data = shp_countries, lwd = 0.2, color = "grey90", fill = "grey97") +
+  ggplot2::geom_sf(data = coastlines, lwd = 0.1, color = "grey10") +
+  geom_point(aes(x = lon, y = lat, color = `Disaster Type`)) +
+  facet_wrap(~`Disaster Type`) +
+  cowplot::theme_minimal_grid()
+
+ggsave(
+  "figures/fig_1_disaster_distribution.png",
+  disaster_distribution,
+  width = 14, height = 8, dpi = 300, units = "in"
+)
+
+
+# hurricane IRMA ----------------------------------------------------------
+
+gdis_data <- st_read("/net/projects/xaida/project_data/gdis/gdis_1990_2020.gpkg")
+
+library(basemapR)
+
+event <- valid_disasters %>% filter(`DisNo.` == "2017-0381-USA")
+bbox <- expand_bbox(st_bbox(event), X = 0, Y = 150000)
+
+irma_impacts <- ggplot() +
+  base_map(bbox, increase_zoom = 5, basemap = "google-terrain") +
+  geom_sf(data = event, fill = "tomato") +
+  scale_x_continuous(breaks = c(-80, -81, -82))
+
+event_gdis <- gdis_data %>% filter(Dis.No == "2017-0381-USA")
+bbox_gdis <- expand_bbox(st_bbox(event_gdis), X = 0, Y = 150000)
+
+irma_impacts_gdis <- ggplot() +
+  base_map(bbox_gdis, increase_zoom = 5, basemap = "google-terrain") +
+  geom_sf(data = event_gdis, fill = "tomato")
+
+
+hurricane_irma <- (irma_impacts_gdis | irma_impacts) + plot_annotation(tag_levels = "a")
+
+ggsave(
+  "figures/fig_5_hurricane_irma.png",
+  hurricane_irma,
+  width = 14, height = 8, dpi = 300, units = "in"
+)
+
+
+# Comparing databases -----------------------------------------------------
+
+compare_df <- read_csv("/net/projects/xaida/database_paper/output_data/geodat_gdis_comaprison.csv")
+
+compare_df %>%
+  filter(`Mismatch > 10%` == TRUE) %>%
+  ggplot(aes(x = `Total Area gdf1`, y = `Total Area gdf2`, size = `Area Difference`)) +
+  geom_point() +
+  xlab("geo-clim-data") +
+  ylab("GDIS")
+
+hist(compare_df$`Mismatch Ratio`, breaks = 100)
+
+table(disasters_df$`Disaster Type`)
+
+
+# Review plots ------------------------------------------------------------
+
+
+table(disasters_df$`Disaster Type`)
+
+disasters_df_1523 <- disasters_df %>% filter(`Start Year` >= 2014)
+table(disasters_df_1523$`Disaster Type`)
+
+
+nationa_disasters <- st_read("/net/projects/xaida/database_paper/output_data/disaster_national_90_23.gpkg")
+
+#nationa_disasters <- st_read("/net/projects/xaida/database_paper/intermediate_data/geolocated_climate_events_1990-2023_simplified_clean.gpkg")
+
+
+sf_use_s2(TRUE)
+sf_use_s2(FALSE)
+for (i in 1:nrow(nationa_disasters)) {
+  if (st_is_valid(nationa_disasters[i, ])) {} else print(i)
+}
+
+#subnationa_disasters <- st_read("/net/projects/xaida/database_paper/output_data/disaster_subnational_90_23.gpkg")
+
+for (i in 1:nrow(subnationa_disasters)) {
+  if (st_is_valid(subnationa_disasters[i, ])) {} else print(i)
+}
+
+
+
+plot(st_geometry(nationa_disasters[392, ]))
+st_is_valid(nationa_disasters[306, ], reason = TRUE)
+
+st_is_valid(nationa_disasters[224, ])
+
+plot(st_geometry(nationa_disasters[224, ]))
+sf_use_s2(FALSE)
+test <- st_make_valid(nationa_disasters[224, ])
+test <- st_buffer(nationa_disasters[224, ],dist=0.0001)
+st_is_valid(test, reason = TRUE)
+plot(st_geometry(test))
+
+subnationa_disasters[43, ]
+
+test_location <- st_read("/net/home/kteber/geocode_disasters/notebooks/geom_test.gpkg")
+st_is_valid(test_location)
+st_is_valid(test_location, reason = TRUE)
+plot(st_geometry(test_location))
+
+plot(st_geometry(test_location[2, ]), color = "red", add = TRUE)
+
+gdf <- st_make_valid(test_location)
+st_is_valid(gdf)
+plot(st_geometry(gdf))
+
+
+test2_location <- st_read("/net/home/kteber/geocode_disasters/notebooks/geom_locations_test.gpkg")
+
+st_is_valid(test2_location)
+plot(st_geometry(test2_location))
+
+
+# subnational locations ---------------------------------------------------
+
+subnationa_disasters <- st_read("/net/projects/xaida/database_paper/output_data/disaster_subnational_90_23.gpkg")
+subnationa_disasters
+
+
+for (i in 1:nrow(subnationa_disasters)) {
+  if (st_is_valid(subnationa_disasters[i, ])) {} else print(i)
+}
+
+
+# GAUL --------------------------------------------------------------------
+
+gaul1 <- st_read("/net/projects/xaida/raw_data/gaul_maps/gaul_admin1_clean.gpkg")
+
+gaul2 <- st_read("/net/projects/xaida/raw_data/gaul_maps/gaul_admin2_clean.gpkg")
+
+ggaul1 <- st_read("/net/projects/xaida/raw_data/gaul_maps/")
+
+ggaul2 <- st_read("/net/projects/xaida/raw_data/gaul_maps/gaul_admin2_clean.gpkg")
+
+test <- st_read("/net/home/kteber/geocode_disasters/notebooks/geolocated_climate_events_1990-2023_simplified_clean.gpkg")
+
+for (i in 1:nrow(test)) {
+  if (st_is_valid(test[i, ])) {} else print(i)
+}
+plot(st_geometry(test[1,]))
+
+
+disasters_df %>% 
+  ggplot(aes(x=Region, y=log(`Total Deaths`)))+
+  geom_boxplot()
+
+disasters_df %>% 
+  ggplot(aes(x=Region, y=log(`Total Affected`)))+
+  geom_boxplot()
+
+disasters_df %>% 
+  ggplot(aes(x=Region, y=log(`Total Damage, Adjusted ('000 US$)`)))+
+  geom_boxplot()
+
+disasters_df %>% 
+  filter(`Total Deaths` < 1000) %>% 
+  ggplot(aes(x=`Total Deaths`))+
+  geom_density()+
+  facet_wrap(~Region)
+
+
+
+# Percent of admin level --------------------------------------------------
+
+
+
+year_regions <- disasters_df %>% select(c(`DisNo.`, `Start Year`,`Region`))
+
+disasters_subnat_info <- left_join(disasters_subnat_st,year_regions)
+
+library(viridis)
+library(hrbrthemes)
+
+disasters_subnat_info %>% 
+  mutate(admin_level=factor(admin_level, levels = c("1","2"))) %>% 
+  ggplot(aes(x=`Start Year`,group=admin_level, fill=admin_level))+
+  geom_bar(position="fill",col=NA)+
+  scale_fill_viridis(discrete = T)+
+  facet_wrap(~Region)+
+  theme_ipsum()
+
+disasters_subnat_info %>% 
+  mutate(admin_level=factor(admin_level, levels = c("1","2"))) %>% 
+  ggplot(aes(x=`Start Year`,group=admin_level, fill=admin_level))+
+  geom_bar(position="fill",col=NA)+
+  scale_fill_viridis(discrete = T)+
+  theme_ipsum()
+
+disasters_subnat_info["area"] <- st_area(disasters_subnat_info)
+
+
+disasters_subnat_info <- disasters_subnat_info %>% mutate(area_km2 = area / 1e6)
+disasters_subnat_info <- disasters_subnat_info %>% mutate(area = as.numeric(area),
+                                 area_km2 = as.numeric(area_km2))
+summary(disasters_subnat_info$area_km2)
+
+
+disasters_subnat_info %>% 
+  mutate(admin_level=factor(admin_level, levels = c("1","2"))) %>% 
+  filter(area_km2 < 1e5) %>% 
+  ggplot(aes(x=admin_level, y=area_km2))+
+  geom_boxplot()+
+  facet_wrap(~Region)
