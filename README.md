@@ -42,15 +42,26 @@ In this script, we overlay the regions corresponding to each EM-DAT event within
 Inputs: Geodaraframe with all identified locations and geographic data
 Outputs: Geodaraframe with overlayed extent per event
 
-#### 6_prepare_data_4aggregation.py
+#### 6_filter_write_data.py
 
-In this script, we join essential event information from EM-DAT to the geocoded locations to prepare the aggregation of the climate variables.
+In this script, we perform additional filtering of EM-DAT events. We remove all events that do not have any impact information, and events with inaccurate geocoding.
 Inputs: Geodaraframe with overlayed extent per event, EM-DAT database
 Output: Geodaraframe with event locations, em-dat event and impact information, and needed time information for climate aggregation
 
+### 7_compare_gdis.py
+
+In this script, we compare the geographic mismatch between EM-DAT events geocoded by GDIS and by Geo-Disasters.
+Inputs: Geo-Disasters, GDIS
+output: comparison_df: dataframe with the comparison results.
+
+### db_descriptions.R
+In this R script, we generate the figures in the publications.
+Inputs: Geo-Disasters (subnational, national overlay), GDIS, EM-DAT, comparison_df
+Output: publication figures
+
 ### How to Run the Scripts
 
-Ensure that the required input files (EM-DAT data, GAUL maps, location CSVs) are available in the specified directories.
+Ensure that the paths to the required input files (EM-DAT data, GAUL maps,...) are correctly stated in `src/utils/paths.py` and `src/utils/paths.R`.
 Run each script in the appropriate order indicated in the names.
 
 ### Notes
@@ -59,6 +70,8 @@ The data output from these scripts is crucial for geographic analysis and visual
 The scripts have built-in error handling for mismatched or missing locations, ensuring robust processing.
 Manual corrections are necessary in many cases.
 The GeoNames API script requires a valid username and should be run twice: once for locations without GAUL IDs and once for manually corrected locations.
+We do not provide the GAUL maps, but we recommend downloading them from Google Earth Engine Data Catalog.
+We do not provide EM-DAT, it can be freely accessed for academic purposes in https://www.emdat.be/
 
 ## **Installation**
 
@@ -74,8 +87,7 @@ The GeoNames API script requires a valid username and should be run twice: once 
 
 ## **Session Info**
 
-- **Python Version**: 3.8.19 | packaged by conda-forge | (default, Mar 20 2024, 12:47:35) 
-[GCC 12.3.0]
+- **Python Version**: 3.8.19 | packaged by conda-forge | (default, Mar 20 2024, 12:47:35) [GCC 12.3.0]
 - **Platform**: Linux-6.8.0-57-generic-x86_64-with-glibc2.10
 - **OS**: Linux
 - **Architecture**: 64bit
