@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this code, please cite it using the metadata below.""
+message: "If you use this code, please cite it using the metadata below."
 title: "Geo-Disasters: Reproducible geocoding framework for EM-DAT climate-disaster events"
 version: "1.0.0"
 doi: 10.6084/m9.figshare.29125907
