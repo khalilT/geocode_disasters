@@ -3,7 +3,7 @@ message: >
   If you use this code, please cite it using the metadata below.
 title: Geo-Disasters: Reproducible geocoding framework for EM-DAT climate-disaster events
 version: "1.0.0"
-doi: figshareDOI          # ← replace with your Figshare (or Zenodo) code DOI
+doi: 10.6084/m9.figshare.29125907
 date-released: 2025-05-22                 # ISO-8601 (YYYY-MM-DD)
 repository-code: https://github.com/khalilT/geocode_disasters
 license: MIT
@@ -27,6 +27,5 @@ keywords:
   - GAUL
   - climate extremes
 abstract: |
-  Geo-Disasters is an open Python framework that geocodes climate-related
-  EM-DAT disaster records to GAUL administrative units, assigns quality flags,
-  and exports two GeoPackage layers covering 1990–2023 at the subnational and national levels.  This snapshot (v1.0.0) reproduces the results reported in the manuscript: DOI
+  Geo-Disasters is an open Python framework that geocodes climate-related EM-DAT disaster records to GAUL administrative units, assigns quality flags, and exports
+ two GeoPackage layers covering 1990–2023 at the subnational and national levels.  This snapshot (v1.0.0) reproduces the results reported in the manuscript: DOI
